@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Verity — Pitch Deck — Geek Room Global AI Hackathon 2026</title>
+<style>
+  @page{size:1280px 720px; margin:0}
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{background:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#191813}
+  .slide{
+    width:1280px; height:720px; page-break-after:always; position:relative;
+    background:#f6f1e7; padding:64px 84px; overflow:hidden;
+  }
+  .slide:last-child{page-break-after:auto}
+  .kicker{font:600 13px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.22em; text-transform:uppercase; color:#1d4ed8; margin-bottom:18px}
+  h1{font:400 64px/1.1 Georgia,"Times New Roman",serif}
+  h1 em{font-style:italic; color:#1d4ed8}
+  h2{font:400 44px/1.15 Georgia,"Times New Roman",serif; margin-bottom:20px}
+  h2 em{font-style:italic; color:#1d4ed8}
+  p.lede{font-size:21px; line-height:1.55; color:#4d4a40; max-width:900px}
+  .foot{position:absolute; left:84px; right:84px; bottom:34px; display:flex; justify-content:space-between;
+    font:11px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#6b675c}
+  .num{position:absolute; right:84px; top:56px; font:700 15px ui-monospace,Menlo,Consolas,monospace; color:#6b675c}
+  /* slide 1 */
+  .s1 h1{font-size:88px; margin:26px 0 10px}
+  .s1 .sub{font-size:26px; color:#4d4a40; margin-bottom:44px}
+  .s1 .meta{font:15px ui-monospace,Menlo,Consolas,monospace; color:#6b675c; line-height:2}
+  .s1 .meta b{color:#191813}
+  .stamp{
+    display:inline-block; font:700 17px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em;
+    color:#177245; border:2.5px solid #177245; border-radius:5px; padding:10px 16px;
+    transform:rotate(-2deg); margin-top:36px; text-transform:uppercase;
+  }
+  /* cards / grids */
+  .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px; margin-top:34px}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:34px}
+  .card{background:#fffdf8; border:1.5px solid #ddd5c2; border-radius:10px; padding:26px 28px}
+  .card h3{font:700 21px Georgia,serif; margin-bottom:10px}
+  .card p{font-size:16.5px; line-height:1.55; color:#4d4a40}
+  .card .big{font:700 44px Georgia,serif; color:#1d4ed8; margin-bottom:6px}
+  .card .big.green{color:#177245}
+  .card .big.amber{color:#a16207}
+  .card .tag{font:600 12px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#6b675c; margin-bottom:8px}
+  /* demo slide */
+  .demo{background:#fffdf8; border:1.5px solid #191813; border-radius:10px; padding:26px 30px; margin-top:28px}
+  .demo .q{font:400 24px Georgia,serif; margin-bottom:16px}
+  .demo .row{display:flex; gap:16px; align-items:center; margin-bottom:14px}
+  .demo .stamp-sm{font:700 14px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.12em; color:#177245; border:2px solid #177245; border-radius:4px; padding:6px 10px; transform:rotate(-1.5deg)}
+  .demo .score{font:700 26px Georgia,serif}
+  .demo .claim{font-size:17px; line-height:1.6; padding:12px 0; border-top:1px solid #ddd5c2}
+  .demo .claim:first-of-type{border-top:none}
+  .demo .cite{font:600 12px ui-monospace,Menlo,Consolas,monospace; color:#1d4ed8; background:#e8eefc; border:1px solid #c4d3f7; border-radius:4px; padding:2px 6px; margin-left:6px}
+  .demo .note{font-size:14px; color:#6b675c; margin-top:12px}
+  /* table */
+  table{width:100%; border-collapse:collapse; margin-top:28px; font-size:17px}
+  th{font:600 12px ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em; text-transform:uppercase; color:#6b675c; text-align:left; padding:10px 14px; border-bottom:2px solid #191813}
+  td{padding:13px 14px; border-bottom:1px solid #ddd5c2; vertical-align:top}
+  td:first-child{font-weight:600}
+  td.yes{color:#177245; font-weight:700}
+  td.no{color:#b3261e}
+  .formula{font:20px ui-monospace,Menlo,Consolas,monospace; background:#fffdf8; border:1.5px solid #ddd5c2; border-radius:8px; padding:18px 22px; margin-top:26px; text-align:center}
+  .formula b{color:#1d4ed8}
+  ul.tight{margin:22px 0 0 22px; font-size:19px; line-height:1.9; color:#4d4a40}
+  ul.tight b{color:#191813}
+</style>
+</head>
+<body>
+
+<!-- 1 · Title -->
+<section class="slide s1">
+  <div class="num">01 / 08</div>
+  <div class="kicker">Geek Room Global AI Hackathon 2026 · Tavily track</div>
+  <h1>Verity<span style="color:#1d4ed8">.</span></h1>
+  <p class="sub">The research agent that <em style="color:#1d4ed8">shows its receipts.</em></p>
+  <p class="lede">Ask a question. Every claim comes with a citation — and a public score
+    for how grounded the answer actually is.</p>
+  <div class="stamp">Grounded · 100/100 · live demo</div>
+  <div class="foot"><span>M S Abhishek · solo · team ms2539</span><span>Prototype due 15 Nov 2026</span></div>
+</section>
+
+<!-- 2 · Problem -->
+<section class="slide">
+  <div class="num">02 / 08</div>
+  <div class="kicker">The problem</div>
+  <h2>AI answers sound confident.<br><em>They hide their sources.</em></h2>
+  <div class="grid3">
+    <div class="card"><div class="tag">01 · Hallucination</div><h3>Confident, wrong, unchecked</h3>
+      <p>An answer that reads well is believed — even when it invents the fact. The reader has no way to tell.</p></div>
+    <div class="card"><div class="tag">02 · Verification tax</div><h3>Checking takes longer than asking</h3>
+      <p>To verify one answer you must redo the research yourself. So most people never check at all.</p></div>
+    <div class="card"><div class="tag">03 · Real stakes</div><h3>Answers get pasted everywhere</h3>
+      <p>Assignments, reports, pitches, code comments. One unverified claim travels further than the question ever did.</p></div>
+  </div>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 3 · Solution -->
+<section class="slide">
+  <div class="num">03 / 08</div>
+  <div class="kicker">The solution</div>
+  <h2>Don’t trust the answer.<br><em>Audit it in one glance.</em></h2>
+  <div class="grid3">
+    <div class="card"><div class="big">1</div><h3>Search live</h3>
+      <p>Tavily web search when a key is set; the free Wikipedia API otherwise. Both run in parallel — best result wins.</p></div>
+    <div class="card"><div class="big">2</div><h3>Quote, don’t invent</h3>
+      <p>Extractive synthesis: the answer is built only from retrieved sentences. No LLM, no generated claims.</p></div>
+    <div class="card"><div class="big green">3</div><h3>Gate the answer</h3>
+      <p>Every claim keeps its citation. A verification gate scores groundedness 0–100 and stamps the verdict.</p></div>
+  </div>
+  <p class="lede" style="margin-top:30px">Plus an <b>evidence constellation</b> — sources as nodes in a rotatable
+    3D space around the question, so the <i>shape</i> of the evidence is visible at a glance.</p>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 4 · Live demo -->
+<section class="slide">
+  <div class="num">04 / 08</div>
+  <div class="kicker">Live demo — real numbers, 12 Nov 2026</div>
+  <h2>It works. <em>Here is the receipt.</em></h2>
+  <div class="demo">
+    <p class="q">“How does photosynthesis work?”</p>
+    <div class="row"><span class="stamp-sm">GROUNDED</span><span class="score">100<small style="font-size:14px;color:#6b675c">/100 grounded</small></span>
+      <span style="color:#6b675c;font-size:15px">3 claims · 2 sources · 1.6 s · Wikipedia</span></div>
+    <p class="claim">Photosynthesis is a system of biological processes by which photopigment-bearing autotrophic organisms convert light energy into chemical energy.<span class="cite">[1]</span></p>
+    <p class="claim">The term photosynthesis usually refers to oxygenic photosynthesis, a process that releases oxygen as a byproduct of water splitting.<span class="cite">[1]</span></p>
+    <p class="note">And when there is nothing to cite — <b>“zxqvkj wobbleflorp zanzibar” → NO EVIDENCE, score 0.</b> Verity says so instead of bluffing.</p>
+  </div>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 5 · How it works -->
+<section class="slide">
+  <div class="num">05 / 08</div>
+  <div class="kicker">How it works</div>
+  <h2>Three honest steps, <em>no black box.</em></h2>
+  <div class="grid3">
+    <div class="card"><div class="tag">Step 1</div><h3>Retrieve</h3>
+      <p>Keyword search over Tavily + Wikipedia in parallel (9 s budget). Sources keep their ranking.</p></div>
+    <div class="card"><div class="tag">Step 2</div><h3>Extract</h3>
+      <p>Sentences scored by question-keyword overlap, de-duplicated, capped at 6 claims. Each keeps its source.</p></div>
+    <div class="card"><div class="tag">Step 3</div><h3>Gate</h3>
+      <p>Score + verdict from the audit trail. Weak evidence gets a THIN stamp, not a confident paragraph.</p></div>
+  </div>
+  <div class="formula">score = <b>50%</b> keyword coverage + <b>30%</b> source diversity + <b>20%</b> claim density</div>
+  <p class="lede" style="margin-top:22px; font-size:18px">Verdicts: <b style="color:#177245">GROUNDED ≥ 70</b> · <b style="color:#a16207">PARTIAL 40–69</b> · <b style="color:#b3261e">THIN &lt; 40</b> · <b style="color:#b3261e">NO EVIDENCE 0</b></p>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 6 · Differentiation -->
+<section class="slide">
+  <div class="num">06 / 08</div>
+  <div class="kicker">What makes it different</div>
+  <h2>The gate <em>is</em> the product.</h2>
+  <table>
+    <tr><th></th><th>Verity</th><th>Answer engines</th><th>Research suites</th></tr>
+    <tr><td>Every claim cited</td><td class="yes">Yes — [n] chips, clickable</td><td class="no">Citations as footnotes</td><td class="yes">Yes — papers only</td></tr>
+    <tr><td>Public groundedness score</td><td class="yes">Yes — 0–100 + verdict</td><td class="no">Hidden confidence</td><td class="no">No single score</td></tr>
+    <tr><td>Says THIN when evidence is weak</td><td class="yes">Yes — by design</td><td class="no">Bluffs fluently</td><td class="no">Over-hedges instead</td></tr>
+    <tr><td>Works with no key, no account</td><td class="yes">Yes — Wikipedia fallback</td><td class="no">Account + key required</td><td class="no">Paywalled tiers</td></tr>
+    <tr><td>Open-web sources, not one corpus</td><td class="yes">Tavily + Wikipedia</td><td class="yes">Web</td><td class="no">Academic papers only</td></tr>
+  </table>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 7 · Tech & proof -->
+<section class="slide">
+  <div class="num">07 / 08</div>
+  <div class="kicker">Tech &amp; proof</div>
+  <h2>Small stack. <em>Tested, not claimed.</em></h2>
+  <div class="grid3">
+    <div class="card"><div class="big">33/33</div><h3>Unit tests pass</h3>
+      <p>Python stdlib unittest, offline. Keywords, synthesis scoring, provider fallback, API validation, WSGI adapter.</p></div>
+    <div class="card"><div class="big green">13/13</div><h3>UI checks pass</h3>
+      <p>Headless Chromium, desktop + mobile. 0 console errors, 0 failed requests, no mobile overflow.</p></div>
+    <div class="card"><div class="big amber">1.6 s</div><h3>Live ask, end to end</h3>
+      <p>Real Wikipedia answer, GROUNDED 100. Python 3.12 stdlib only — no dependencies, no paid APIs, no keys stored.</p></div>
+  </div>
+  <ul class="tight">
+    <li><b>Deploy:</b> Vercel serverless, one WSGI adapter — same handler locally and in production.</li>
+    <li><b>3D:</b> CSS-3D evidence constellation — no WebGL, no library, keyboard-accessible, 2D list always present.</li>
+    <li><b>Fresh build:</b> written 12 Nov 2026, inside the 1–15 Nov window. Not a port.</li>
+  </ul>
+  <div class="foot"><span>Verity</span><span>Geek Room Global AI Hackathon 2026</span></div>
+</section>
+
+<!-- 8 · Ask -->
+<section class="slide">
+  <div class="num">08 / 08</div>
+  <div class="kicker">Why Verity wins this track</div>
+  <h2>Built for the Tavily track.<br><em>Ready to be judged.</em></h2>
+  <ul class="tight">
+    <li><b>Direct track fit:</b> a Tavily-grounded research agent — top-3 Tavily projects win 50,000 Tavily credits, on top of the $1,000 cash pool.</li>
+    <li><b>Works the moment it opens:</b> no key, no account, no setup — the demo never depends on credentials.</li>
+    <li><b>Honest by construction:</b> the product’s core feature is admitting what it cannot prove.</li>
+  </ul>
+  <p class="lede" style="margin-top:30px">Next: public repo → Vercel deploy → demo video from the live URL → submit by 15 Nov 23:59 IST.</p>
+  <p style="margin-top:26px; font:15px ui-monospace,Menlo,Consolas,monospace; color:#6b675c">M S Abhishek · MSAbhishek22 · msabhishekbdps@gmail.com · Shobhit University, Meerut</p>
+  <div class="foot"><span>Verity — show the receipt.</span><span>Thank you</span></div>
+</section>
+
+</body>
+</html>

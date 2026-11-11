@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verity — the research agent that shows its receipts</title>
+<meta name="description" content="Ask a question. Verity searches live sources, answers only with sentences it can cite, and scores how grounded the answer is. Built for the Geek Room Global AI Hackathon 2026 (Tavily track).">
+<style>
+  :root{
+    --paper:#f6f1e7; --card:#fffdf8; --ink:#191813; --faded:#6b675c;
+    --line:#ddd5c2; --blue:#1d4ed8; --green:#177245; --amber:#a16207;
+    --red:#b3261e; --focus:#1d4ed8;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:0 20px 80px}
+  a{color:var(--blue)}
+  a:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--focus); outline-offset:2px;
+  }
+  /* ---------- header ---------- */
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between;
+    gap:12px; padding:22px 0 8px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .wordmark{font:700 26px Georgia,"Times New Roman",serif; letter-spacing:.02em}
+  .wordmark .dot{color:var(--blue)}
+  .tagline{font-size:13px; color:var(--faded); margin:2px 0 0}
+  .chips{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .chip{
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.08em;
+    text-transform:uppercase; border:1px solid var(--line); border-radius:999px;
+    padding:6px 10px; background:var(--card); color:var(--faded); white-space:nowrap;
+  }
+  .chip b{color:var(--ink); font-weight:600}
+  .chip.provider b{color:var(--blue)}
+  button.motion-toggle{
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.06em;
+    text-transform:uppercase; background:transparent; border:1px solid var(--line);
+    border-radius:999px; padding:6px 10px; cursor:pointer; color:var(--faded);
+  }
+  button.motion-toggle[aria-pressed="true"]{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+  /* ---------- hero / ask ---------- */
+  .hero{padding:40px 0 8px}
+  .hero h1{
+    font:400 34px/1.25 Georgia,"Times New Roman",serif; margin:0 0 10px;
+  }
+  .hero h1 em{font-style:italic; color:var(--blue)}
+  .hero p.lede{margin:0 0 22px; color:var(--faded); max-width:640px}
+  form.ask{display:flex; gap:10px}
+  form.ask input{
+    flex:1; min-width:0; font:20px/1.3 Georgia,"Times New Roman",serif;
+    padding:14px 16px; border:1.5px solid var(--ink); border-radius:6px;
+    background:var(--card); color:var(--ink);
+  }
+  form.ask input::placeholder{color:#a39d8d}
+  form.ask button{
+    font:600 15px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--ink); color:var(--paper); border:1.5px solid var(--ink);
+    border-radius:6px; padding:0 22px; cursor:pointer; white-space:nowrap;
+  }
+  form.ask button:hover{background:#000}
+  form.ask button:disabled{opacity:.55; cursor:wait}
+  .fielderror{color:var(--red); font-size:14px; margin:8px 0 0; display:none}
+  .fielderror.show{display:block}
+  .samples{margin:16px 0 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .samples span{font-size:13px; color:var(--faded)}
+  .samples button{
+    font-size:13px; background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:7px 12px; cursor:pointer; color:var(--ink);
+  }
+  .samples button:hover{border-color:var(--ink)}
+  /* ---------- status / verdict ---------- */
+  .status{
+    margin:26px 0 0; font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;
+    color:var(--faded); display:none; min-height:20px;
+  }
+  .status.show{display:block}
+  .status .tick{color:var(--green)}
+  section.results{display:none; margin-top:26px}
+  section.results.show{display:block}
+  .verdict{
+    border:1.5px solid var(--ink); border-radius:8px; background:var(--card);
+    padding:18px 20px;
+  }
+  .verdict .row{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+  .stamp{
+    font:700 15px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.14em;
+    border:2px solid currentColor; border-radius:4px; padding:8px 12px;
+    text-transform:uppercase; transform:rotate(-1.5deg);
+  }
+  .stamp.grounded{color:var(--green)}
+  .stamp.partial{color:var(--amber)}
+  .stamp.thin,.stamp.noevidence{color:var(--red)}
+  .verdict .score{font:700 30px/1 Georgia,serif}
+  .verdict .score small{font:400 14px/1 sans-serif; color:var(--faded)}
+  .verdict .meta{font-size:13px; color:var(--faded)}
+  .meter{height:10px; background:#e9e2d0; border-radius:999px; margin-top:14px; overflow:hidden}
+  .meter i{
+    display:block; height:100%; width:0; border-radius:999px;
+    background:var(--green); transition:width .5s ease-out;
+  }
+  .meter.partial i{background:var(--amber)}
+  .meter.thin i,.meter.noevidence i{background:var(--red)}
+  /* ---------- claims ---------- */
+  h2.section{
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--faded); margin:34px 0 12px;
+    border-bottom:1px solid var(--line); padding-bottom:8px;
+  }
+  ol.claims{list-style:none; margin:0; padding:0; counter-reset:claim}
+  ol.claims li{
+    counter-increment:claim; background:var(--card); border:1px solid var(--line);
+    border-radius:8px; padding:16px 18px 16px 58px; margin:0 0 10px; position:relative;
+    font-size:16.5px; line-height:1.65;
+    opacity:0; transform:translateY(8px);
+    animation:rise .24s ease-out forwards;
+  }
+  ol.claims li::before{
+    content:counter(claim, decimal-leading-zero);
+    position:absolute; left:16px; top:16px;
+    font:700 15px/1.4 ui-monospace,Menlo,Consolas,monospace; color:var(--blue);
+  }
+  @keyframes rise{to{opacity:1; transform:none}}
+  .cite{
+    font:600 12px/1 ui-monospace,Menlo,Consolas,monospace; color:var(--blue);
+    background:#e8eefc; border:1px solid #c4d3f7; border-radius:4px;
+    padding:3px 6px; margin-left:6px; cursor:pointer; vertical-align:2px;
+    white-space:nowrap;
+  }
+  .cite:hover{background:#d6e2fb}
+  .empty-note{
+    background:var(--card); border:1px dashed var(--line); border-radius:8px;
+    padding:18px 20px; color:var(--faded);
+  }
+  /* ---------- constellation ---------- */
+  .constellation{
+    height:320px; border:1px solid var(--line); border-radius:8px;
+    background:radial-gradient(ellipse at center, #fffdf8 0%, #efe8d6 100%);
+    overflow:hidden; position:relative; cursor:grab; touch-action:none;
+    perspective:900px;
+  }
+  .constellation:active{cursor:grabbing}
+  .constellation .orbit{
+    position:absolute; inset:0; transform-style:preserve-3d;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .node{
+    position:absolute; left:50%; top:50%;
+    transform-style:preserve-3d;
+    border-radius:50%; border:2px solid #fff;
+    box-shadow:0 4px 14px rgba(25,24,19,.25);
+    cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+    font:700 12px/1 ui-monospace,Menlo,Consolas,monospace; color:#fff;
+    transition:box-shadow .15s ease;
+  }
+  .node:hover,.node:focus-visible{box-shadow:0 0 0 3px var(--blue), 0 4px 14px rgba(25,24,19,.3)}
+  .node.tavily{background:var(--blue)}
+  .node.wikipedia{background:var(--green)}
+  .node.q{
+    background:var(--ink); border-radius:6px; width:64px !important; height:64px !important;
+    font:700 22px/1 Georgia,serif; box-shadow:0 6px 18px rgba(25,24,19,.35);
+  }
+  .constellation .hint{
+    position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--faded);
+    background:rgba(255,253,248,.85); padding:4px 8px; border-radius:4px; pointer-events:none;
+  }
+  .constellation .legend{
+    position:absolute; right:12px; top:10px; font-size:12px; color:var(--faded);
+    background:rgba(255,253,248,.85); padding:4px 8px; border-radius:4px; pointer-events:none;
+  }
+  .legend .sw{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px}
+  /* ---------- sources ---------- */
+  .source{
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:16px 18px; margin:0 0 10px; scroll-margin-top:20px;
+  }
+  .source.flash{border-color:var(--blue); box-shadow:0 0 0 3px #d6e2fb}
+  .source h3{margin:0 0 4px; font-size:15.5px}
+  .source h3 a{text-decoration:none}
+  .source h3 a:hover{text-decoration:underline}
+  .source .prov{
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.08em;
+    text-transform:uppercase; border-radius:4px; padding:3px 7px; margin-left:8px;
+    vertical-align:2px;
+  }
+  .source .prov.tavily{background:#e8eefc; color:var(--blue)}
+  .source .prov.wikipedia{background:#e2f2e9; color:var(--green)}
+  .source p{margin:6px 0 8px; color:#3d3a30; font-size:14.5px}
+  .source .url{font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; color:var(--faded); word-break:break-all}
+  /* ---------- export / how / footer ---------- */
+  .actions{margin:22px 0 0; display:flex; gap:10px; flex-wrap:wrap}
+  .actions button{
+    font-size:14px; padding:10px 16px; border-radius:6px; cursor:pointer;
+  }
+  .actions .primary{background:var(--ink); color:var(--paper); border:1.5px solid var(--ink)}
+  .actions .secondary{background:transparent; color:var(--ink); border:1.5px solid var(--ink)}
+  .how{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:12px;
+  }
+  .how div{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px}
+  .how h3{margin:0 0 6px; font:700 14px/1.4 Georgia,serif}
+  .how p{margin:0; font-size:13.5px; color:var(--faded)}
+  footer{
+    margin-top:44px; border-top:1px solid var(--line); padding-top:16px;
+    font-size:13px; color:var(--faded);
+  }
+  footer code{font:12px ui-monospace,Menlo,Consolas,monospace; color:#4d4a40}
+  /* ---------- motion preferences ---------- */
+  body.low-motion ol.claims li{animation:none; opacity:1; transform:none}
+  body.low-motion .meter i{transition:none}
+  body.low-motion .constellation .orbit{transition:none}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    ol.claims li{animation:none; opacity:1; transform:none}
+    .meter i{transition:none}
+  }
+  @media (max-width:720px){
+    .hero h1{font-size:26px}
+    form.ask{flex-direction:column}
+    form.ask button{padding:13px}
+    .constellation{height:230px}
+    .how{grid-template-columns:1fr}
+    .verdict .score{font-size:24px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <div class="wordmark">Verity<span class="dot">.</span></div>
+      <p class="tagline">The research agent that shows its receipts.</p>
+    </div>
+    <div class="chips">
+      <span class="chip provider">Source: <b id="providerChip">…</b></span>
+      <span class="chip">Geek Room · Tavily track</span>
+      <button class="motion-toggle" id="motionToggle" type="button" aria-pressed="false">Low motion: off</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Ask anything. <em>Every claim shows its receipt.</em></h1>
+    <p class="lede">Verity searches live sources, answers only with sentences it can cite,
+      and scores how grounded the answer is. If the evidence is thin, it says so —
+      it never bluffs.</p>
+    <form class="ask" id="askForm" novalidate>
+      <label for="q" class="sr-only" style="position:absolute;left:-9999px">Your question</label>
+      <input id="q" name="q" type="text" autocomplete="off" maxlength="500"
+             placeholder="e.g. What is the Tavily API used for?" aria-describedby="qError">
+      <button id="askBtn" type="submit">Ask Verity</button>
+    </form>
+    <p class="fielderror" id="qError" role="alert"></p>
+    <div class="samples">
+      <span>Try:</span>
+      <button type="button" data-q="How do vaccines work?">How do vaccines work?</button>
+      <button type="button" data-q="How does photosynthesis work?">How does photosynthesis work?</button>
+      <button type="button" data-q="Who won the first modern Olympic Games?">Who won the first modern Olympic Games?</button>
+    </div>
+    <p class="status" id="status" aria-live="polite"></p>
+  </section>
+
+  <section class="results" id="results" aria-live="polite">
+    <div class="verdict" id="verdictBox">
+      <div class="row">
+        <span class="stamp grounded" id="verdictStamp">GROUNDED</span>
+        <span class="score"><span id="scoreNum">0</span><small>/100 grounded</small></span>
+        <span class="meta" id="verdictMeta"></span>
+      </div>
+      <div class="meter" id="meter"><i></i></div>
+    </div>
+
+    <h2 class="section">Answer — cited claims</h2>
+    <div id="claimsWrap"></div>
+
+    <h2 class="section">Evidence constellation — the shape of the sources</h2>
+    <div class="constellation" id="constellation" aria-label="Interactive 3D map of sources. Drag to rotate. Each node is a source; select it to open the source below.">
+      <div class="orbit" id="orbit"></div>
+      <span class="hint">Drag to rotate · click a node to open its source</span>
+      <span class="legend"><span class="sw" style="background:#1d4ed8"></span>Tavily
+        &nbsp;<span class="sw" style="background:#177245"></span>Wikipedia</span>
+    </div>
+
+    <h2 class="section">Sources</h2>
+    <div id="sourcesWrap"></div>
+
+    <div class="actions">
+      <button class="primary" id="exportBtn" type="button">Download brief (.md)</button>
+      <button class="secondary" id="againBtn" type="button">Ask another question</button>
+    </div>
+  </section>
+
+  <h2 class="section">How it works</h2>
+  <div class="how">
+    <div><h3>1 · Search live</h3><p>Tavily web search when a key is set; the free Wikipedia API otherwise. Both run in parallel and the best result wins.</p></div>
+    <div><h3>2 · Quote, don't invent</h3><p>Extractive synthesis: the answer is built only from retrieved sentences. No LLM, no generated claims.</p></div>
+    <div><h3>3 · Gate the answer</h3><p>Every claim keeps its citation. The gate scores keyword coverage, source diversity and claim count — and labels weak answers THIN.</p></div>
+  </div>
+
+  <footer>
+    <p>Verity 0.1.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
+      Extractive synthesis: every claim is a sentence from a retrieved source; nothing is generated.
+      Provider: <code id="footerProvider">…</code>. No account, no tracking, no data stored.</p>
+    <p>Honest limits: answers are only as good as the retrieved sources; Wikipedia is an
+      encyclopaedia, not a primary source; a GROUNDED verdict means the claims are cited,
+      not that they are true. Always open the source before you quote it.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var form = document.getElementById("askForm");
+  var input = document.getElementById("q");
+  var btn = document.getElementById("askBtn");
+  var err = document.getElementById("qError");
+  var statusEl = document.getElementById("status");
+  var resultsEl = document.getElementById("results");
+  var claimsWrap = document.getElementById("claimsWrap");
+  var sourcesWrap = document.getElementById("sourcesWrap");
+  var orbit = document.getElementById("orbit");
+  var constellation = document.getElementById("constellation");
+  var lastAnswer = null;
+  var lowMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var motionToggle = document.getElementById("motionToggle");
+
+  function setLowMotion(on){
+    lowMotion = on;
+    document.body.classList.toggle("low-motion", on);
+    motionToggle.setAttribute("aria-pressed", String(on));
+    motionToggle.textContent = "Low motion: " + (on ? "on" : "off");
+  }
+  if (lowMotion) setLowMotion(true);
+  motionToggle.addEventListener("click", function(){ setLowMotion(!lowMotion); });
+
+  function showError(msg){
+    err.textContent = msg; err.classList.add("show");
+  }
+  function clearError(){ err.textContent = ""; err.classList.remove("show"); }
+
+  function setStatus(html){
+    statusEl.innerHTML = html; statusEl.classList.add("show");
+  }
+
+  // Provider chip from the server (no key is ever exposed).
+  fetch("/api/status").then(function(r){ return r.json(); }).then(function(s){
+    var label = s.provider === "tavily" ? "Tavily" : "Wikipedia";
+    if (s.provider === "wikipedia") label += " (Tavily not connected)";
+    document.getElementById("providerChip").textContent = label;
+    document.getElementById("footerProvider").textContent =
+      s.provider + (s.tavily_configured ? "" : " — fallback, no Tavily key set");
+  }).catch(function(){
+    document.getElementById("providerChip").textContent = "unknown";
+    document.getElementById("footerProvider").textContent = "unknown";
+  });
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function render(data){
+    lastAnswer = data;
+    var verdict = data.verdict;
+    var stamp = document.getElementById("verdictStamp");
+    stamp.textContent = verdict === "NO EVIDENCE" ? "NO EVIDENCE" : verdict;
+    stamp.className = "stamp " + verdict.toLowerCase().replace(" ", "");
+    document.getElementById("scoreNum").textContent = data.score;
+    document.getElementById("verdictMeta").textContent =
+      data.claims.length + " claim(s) · " + data.sources_used + " source(s) used · " +
+      Math.round(data.coverage * 100) + "% of question keywords covered · " +
+      data.provider + (data.fell_back ? " (Tavily failed — fell back)" : "") +
+      " · " + (data.took_ms / 1000).toFixed(1) + "s";
+    var meter = document.getElementById("meter");
+    meter.className = "meter " + verdict.toLowerCase().replace(" ", "");
+    meter.firstElementChild.style.width = data.score + "%";
+
+    if (!data.claims.length){
+      claimsWrap.innerHTML = '<div class="empty-note"><strong>No evidence found.</strong> ' +
+        'No retrieved source contained a sentence matching your question. ' +
+        'Try rephrasing it, or ask about a more specific topic.</div>';
+    } else {
+      var html = '<ol class="claims">';
+      data.claims.forEach(function(c, i){
+        html += '<li style="animation-delay:' + (i * 60) + 'ms">' + esc(c.text) +
+          '<button type="button" class="cite" data-source="' + c.source_index + '" ' +
+          'aria-label="Open source ' + (c.source_index + 1) + ': ' + esc(c.source_title) + '">' +
+          '[' + (c.source_index + 1) + ']</button></li>';
+      });
+      html += "</ol>";
+      claimsWrap.innerHTML = html;
+    }
+
+    var sh = "";
+    data.sources.forEach(function(s, i){
+      sh += '<article class="source" id="source-' + i + '">' +
+        '<h3><a href="' + esc(s.url) + '" target="_blank" rel="noopener noreferrer">' + esc(s.title) + '</a>' +
+        '<span class="prov ' + esc(s.provider) + '">' + esc(s.provider) + '</span></h3>' +
+        '<p>' + esc((s.content || "").slice(0, 280)) + (s.content && s.content.length > 280 ? "…" : "") + '</p>' +
+        '<div class="url">' + esc(s.url) + '</div></article>';
+    });
+    sourcesWrap.innerHTML = sh;
+
+    claimsWrap.querySelectorAll(".cite").forEach(function(b){
+      b.addEventListener("click", function(){ focusSource(+b.getAttribute("data-source")); });
+    });
+
+    buildConstellation(data);
+    resultsEl.classList.add("show");
+    resultsEl.scrollIntoView({behavior: lowMotion ? "auto" : "smooth", block: "start"});
+  }
+
+  function focusSource(idx){
+    var el = document.getElementById("source-" + idx);
+    if (!el) return;
+    el.scrollIntoView({behavior: lowMotion ? "auto" : "smooth", block: "center"});
+    el.classList.add("flash");
+    setTimeout(function(){ el.classList.remove("flash"); }, 1200);
+  }
+
+  /* ---- evidence constellation (CSS 3D, drag to rotate) ---- */
+  var rotY = -18, rotX = 8, autoSpin = true, dragging = false, lastX = 0, lastY = 0;
+  var rafId = null;
+
+  function buildConstellation(data){
+    orbit.innerHTML = "";
+    var q = document.createElement("button");
+    q.type = "button"; q.className = "node q"; q.textContent = "?";
+    q.setAttribute("aria-label", "Your question");
+    q.style.transform = "translate(-50%,-50%) translateZ(70px)";
+    orbit.appendChild(q);
+    var n = data.sources.length || 1;
+    var radius = Math.max(120, Math.min(190, 60 + n * 18));
+    data.sources.forEach(function(s, i){
+      var angle = (360 / n) * i;
+      var used = data.claims.some(function(c){ return c.source_index === i; });
+      var size = used ? 46 : 34;
+      var node = document.createElement("button");
+      node.type = "button";
+      node.className = "node " + s.provider;
+      node.textContent = String(i + 1);
+      node.style.width = size + "px"; node.style.height = size + "px";
+      node.style.transform = "translate(-50%,-50%) rotateY(" + angle + "deg) translateZ(" + radius + "px)";
+      node.setAttribute("aria-label", "Source " + (i + 1) + ": " + s.title);
+      node.addEventListener("click", function(){ focusSource(i); });
+      orbit.appendChild(node);
+    });
+    applyOrbit();
+    startSpin();
+  }
+
+  function applyOrbit(){
+    orbit.style.transform = "rotateX(" + rotX + "deg) rotateY(" + rotY + "deg)";
+  }
+  function startSpin(){
+    if (rafId || lowMotion) return;
+    var last = performance.now();
+    var tick = function(now){
+      if (autoSpin && !dragging && !lowMotion){
+        rotY += (now - last) * 360 / 24000;
+        applyOrbit();
+      }
+      last = now;
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+  constellation.addEventListener("pointerdown", function(e){
+    dragging = true; autoSpin = false; lastX = e.clientX; lastY = e.clientY;
+    constellation.setPointerCapture(e.pointerId);
+  });
+  constellation.addEventListener("pointermove", function(e){
+    if (!dragging) return;
+    rotY += (e.clientX - lastX) * 0.4;
+    rotX = Math.max(-30, Math.min(30, rotX - (e.clientY - lastY) * 0.25));
+    lastX = e.clientX; lastY = e.clientY;
+    applyOrbit();
+  });
+  function endDrag(){ dragging = false; setTimeout(function(){ autoSpin = true; }, 3000); }
+  constellation.addEventListener("pointerup", endDrag);
+  constellation.addEventListener("pointercancel", endDrag);
+  constellation.addEventListener("mouseenter", function(){ autoSpin = false; });
+  constellation.addEventListener("mouseleave", function(){ autoSpin = true; });
+  // Pause the spin when the constellation is off-screen.
+  if ("IntersectionObserver" in window){
+    new IntersectionObserver(function(entries){
+      autoSpin = entries[0].isIntersecting;
+    }, {threshold: 0.1}).observe(constellation);
+  }
+
+  /* ---- ask flow ---- */
+  function ask(question){
+    clearError();
+    btn.disabled = true; btn.textContent = "Asking…";
+    setStatus('<span class="tick">●</span> Searching live sources…');
+    var t1 = setTimeout(function(){
+      setStatus('<span class="tick">●</span> Searching live sources… <span class="tick">●</span> Verifying claims against sources…');
+    }, 900);
+    fetch("/api/ask", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question: question})
+    }).then(function(r){ return r.json().then(function(j){ return {status: r.status, body: j}; }); })
+    .then(function(res){
+      clearTimeout(t1);
+      btn.disabled = false; btn.textContent = "Ask Verity";
+      if (res.status !== 200){
+        setStatus('<span style="color:var(--red)">✕ ' + esc(res.body.message || "Something went wrong.") + '</span> ' +
+          '<button type="button" id="retryBtn" style="font:inherit;color:var(--blue);background:none;border:none;cursor:pointer;text-decoration:underline">Try again</button>');
+        document.getElementById("retryBtn").addEventListener("click", function(){ ask(question); });
+        return;
+      }
+      setStatus('<span class="tick">●</span> Searching live sources… <span class="tick">●</span> Found ' +
+        res.body.sources.length + ' source(s) (' + esc(res.body.provider) + ') <span class="tick">●</span> Verified ' +
+        res.body.claims.length + ' claim(s) — verdict: ' + esc(res.body.verdict) + '.');
+      render(res.body);
+    }).catch(function(){
+      clearTimeout(t1);
+      btn.disabled = false; btn.textContent = "Ask Verity";
+      setStatus('<span style="color:var(--red)">✕ Network error — the request did not reach the server.</span> ' +
+        '<button type="button" id="retryBtn2" style="font:inherit;color:var(--blue);background:none;border:none;cursor:pointer;text-decoration:underline">Try again</button>');
+      document.getElementById("retryBtn2").addEventListener("click", function(){ ask(question); });
+    });
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var q = input.value.trim();
+    if (q.length < 3){ showError("Ask a question of at least 3 characters."); input.focus(); return; }
+    if (q.length > 500){ showError("Please keep the question under 500 characters."); input.focus(); return; }
+    ask(q);
+  });
+
+  document.querySelectorAll(".samples button").forEach(function(b){
+    b.addEventListener("click", function(){
+      input.value = b.getAttribute("data-q");
+      ask(b.getAttribute("data-q"));
+    });
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    if (!lastAnswer) return;
+    var lines = ["# Verity brief — " + lastAnswer.question, "",
+      "Verdict: **" + lastAnswer.verdict + "** (groundedness " + lastAnswer.score +
+      "/100; keyword coverage " + Math.round(lastAnswer.coverage * 100) + "%; " +
+      lastAnswer.sources_used + " source(s) used)", "", "## Claims", ""];
+    lastAnswer.claims.forEach(function(c, i){
+      lines.push((i + 1) + ". " + c.text + " [" + (c.source_index + 1) + "]");
+    });
+    lines.push("", "## Sources", "");
+    lastAnswer.sources.forEach(function(s, i){
+      lines.push("[" + (i + 1) + "] " + s.title + " — " + s.url + " (" + s.provider + ")");
+    });
+    lines.push("", "---", "Built by Verity (Geek Room Global AI Hackathon 2026). " +
+      "Extractive synthesis: every claim is a sentence from a retrieved source.");
+    var blob = new Blob([lines.join("\n")], {type: "text/markdown"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "verity-brief.md";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  document.getElementById("againBtn").addEventListener("click", function(){
+    resultsEl.classList.remove("show");
+    statusEl.classList.remove("show");
+    input.value = ""; input.focus();
+    window.scrollTo({top: 0, behavior: lowMotion ? "auto" : "smooth"});
+  });
+})();
+</script>
+</body>
+</html>
