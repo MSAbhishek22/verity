@@ -1,3 +1,19 @@
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,50:1f6feb,100:8957e5&height=190&section=header&text=Verity&fontSize=44&fontColor=ffffff&animation=fadeIn&desc=A%20research%20agent%20that%20answers%20with%20receipts&descSize=16"/>
+
+> **📖 The Story** AI answers sound confident even when they're invented — and a student or a builder quoting one has no quick way to check it. Built for the Geek Room Global AI Hackathon 2026 (Tavily partner track), Verity flips the deal: the citation is the product, not an accessory, and every answer has to earn its receipts.
+>
+> **🎯 The Problem** Research answers without sources can't be trusted, cited, or checked without redoing the whole search yourself.
+>
+> **👥 Who It's For** Students, researchers and builders who need an answer they can defend, not just repeat.
+>
+> **🔑 The USP** A groundedness gate scored 0–100 sits between the answer and you — claims ship only with their citations attached, and the test suite stands at 33/33.
+>
+> **🚀 What's Next** Deeper claim-by-claim checking against more sources, so the receipts get harder to argue with.
+>
+> **🔗 Live: [verity-m-s-abhisheks-projects.vercel.app](https://verity-m-s-abhisheks-projects.vercel.app) · 🎥 Demo: [YouTube](https://www.youtube.com/watch?v=27PTOpvSwFs)**
+
+---
+
 # Verity — the research agent that shows its receipts
 
 **Geek Room Global AI Hackathon 2026 · Tavily track · solo entry**
