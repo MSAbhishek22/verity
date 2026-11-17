@@ -24,8 +24,8 @@ Ask a question. Verity searches live sources, answers **only with sentences it
 can cite**, and scores how grounded the answer is. If the evidence is thin, it
 says so — it never bluffs.
 
-- **Live demo:** *(deploy pending — main agent)* — run locally with `python3 app/server.py`
-- **Repo:** *(to be created by the main agent — intended `MSAbhishek22/verity`)*
+- **Live demo:** **https://verity-m-s-abhisheks-projects.vercel.app** — or run locally with `python3 app/server.py`
+- **Repo:** https://github.com/MSAbhishek22/verity
 
 ## The problem
 
