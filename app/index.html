@@ -292,7 +292,8 @@
     <div id="sourcesWrap"></div>
 
     <div class="actions">
-      <button class="primary" id="exportBtn" type="button">Download brief (.md)</button>
+      <button class="primary" id="exportPdfBtn" type="button">Download brief (.pdf)</button>
+      <button class="secondary" id="exportBtn" type="button">Download brief (.md)</button>
       <button class="secondary" id="againBtn" type="button">Ask another question</button>
     </div>
   </section>
@@ -305,7 +306,8 @@
   </div>
 
   <footer>
-    <p>Verity 0.1.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
+    <p>Verity 0.2.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
+      PDF brief export added 21 Nov 2026 for the Global AI Builder's Challenge.
       Extractive synthesis: every claim is a sentence from a retrieved source; nothing is generated.
       Provider: <code id="footerProvider">…</code>. No account, no tracking, no data stored.</p>
     <p>Honest limits: answers are only as good as the retrieved sources; Wikipedia is an
@@ -544,6 +546,45 @@
     b.addEventListener("click", function(){
       input.value = b.getAttribute("data-q");
       ask(b.getAttribute("data-q"));
+    });
+  });
+
+  document.getElementById("exportPdfBtn").addEventListener("click", function(){
+    if (!lastAnswer) return;
+    var pdfBtn = this;
+    pdfBtn.disabled = true; pdfBtn.textContent = "Preparing PDF…";
+    // Send back exactly the brief on screen (trimmed to what the PDF
+    // prints) — the server renders it, it never re-searches.
+    var payload = {
+      question: lastAnswer.question,
+      verdict: lastAnswer.verdict,
+      score: lastAnswer.score,
+      coverage: lastAnswer.coverage,
+      sources_used: lastAnswer.sources_used,
+      claims: lastAnswer.claims.map(function(c){
+        return {text: c.text, source_index: c.source_index};
+      }),
+      sources: lastAnswer.sources.map(function(s){
+        return {title: s.title, url: s.url, provider: s.provider};
+      })
+    };
+    fetch("/api/brief.pdf", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      if (r.status !== 200) throw new Error("pdf failed");
+      return r.blob();
+    }).then(function(blob){
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "verity-brief.pdf";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    }).catch(function(){
+      setStatus('<span style="color:var(--red)">✕ The PDF could not be prepared. The Markdown download still works.</span>');
+    }).then(function(){
+      pdfBtn.disabled = false; pdfBtn.textContent = "Download brief (.pdf)";
     });
   });
 

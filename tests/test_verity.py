@@ -18,6 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "app"))
 sys.path.insert(0, ROOT)
 
+import brief_pdf  # noqa: E402
 import search  # noqa: E402
 import service  # noqa: E402
 import synthesize  # noqa: E402
@@ -373,6 +374,172 @@ class TestService(unittest.TestCase):
     def test_unknown_route_is_404(self):
         status, _, _ = service.handle("GET", "/nope", {}, None)
         self.assertEqual(status, 404)
+
+
+def _brief_payload(answer):
+    """The trimmed answer the UI posts to /api/brief.pdf."""
+    return {
+        "question": answer["question"],
+        "verdict": answer["verdict"],
+        "score": answer["score"],
+        "coverage": answer["coverage"],
+        "sources_used": answer["sources_used"],
+        "claims": [{"text": c["text"], "source_index": c["source_index"]}
+                   for c in answer["claims"]],
+        "sources": [{"title": s["title"], "url": s["url"],
+                     "provider": s["provider"]} for s in answer["sources"]],
+    }
+
+
+class TestBriefPdf(unittest.TestCase):
+    def setUp(self):
+        self.answer = synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES)
+        self.pdf = brief_pdf.render_pdf(self.answer)
+
+    def test_pdf_has_header_and_eof(self):
+        self.assertTrue(self.pdf.startswith(b"%PDF-1.4"))
+        self.assertTrue(self.pdf.rstrip().endswith(b"%%EOF"))
+
+    def test_xref_offsets_point_at_their_objects(self):
+        import re
+        startxref = int(re.search(rb"startxref\s+(\d+)", self.pdf).group(1))
+        self.assertEqual(self.pdf[startxref:startxref + 4], b"xref")
+        lines = self.pdf[startxref:].split(b"\n")
+        count = int(lines[1].split()[1])
+        for num in range(1, count):
+            offset = int(lines[2 + num].split()[0])
+            marker = f"{num} 0 obj".encode()
+            self.assertEqual(self.pdf[offset:offset + len(marker)], marker)
+
+    def test_pdf_contains_question_verdict_and_claims(self):
+        self.assertIn(b"What is the Tavily API used for?", self.pdf)
+        self.assertIn(b"GROUNDED", self.pdf)
+        self.assertIn(b"groundedness", self.pdf)
+        self.assertIn(
+            b"The Tavily API provides web search designed for AI agents.",
+            self.pdf)
+        self.assertIn(b"[1]", self.pdf)  # claim/source markers survive
+
+    def test_every_source_gets_a_clickable_link(self):
+        self.assertEqual(self.pdf.count(b"/Subtype /Link"),
+                         len(FIXTURE_SOURCES))
+        for source in FIXTURE_SOURCES:
+            self.assertIn(b"/URI (" + source["url"].encode() + b")",
+                          self.pdf)
+
+    def test_escapes_parentheses_and_backslashes(self):
+        answer = {
+            "question": "What (exactly) is Tavily?",
+            "verdict": "PARTIAL", "score": 50, "coverage": 0.5,
+            "sources_used": 1,
+            "claims": [{"text": "Path C:\\temp is a folder.",
+                        "source_index": 0}],
+            "sources": [{"title": "T", "url": "https://t.test/",
+                         "provider": "tavily"}],
+        }
+        pdf = brief_pdf.render_pdf(answer)
+        self.assertIn(b"What \\(exactly\\) is Tavily?", pdf)
+        self.assertIn(b"C:\\\\temp", pdf)
+
+    def test_unicode_titles_do_not_break_rendering(self):
+        answer = dict(self.answer)
+        answer["sources"] = [{
+            "title": "Tavily — the “search” API 🚀",
+            "url": "https://example.test/tavily", "provider": "tavily",
+        }]
+        pdf = brief_pdf.render_pdf(answer)
+        self.assertTrue(pdf.startswith(b"%PDF-1.4"))
+        self.assertIn(b"Tavily", pdf)
+
+    def test_no_evidence_answer_still_renders(self):
+        answer = synthesize.synthesize("quantum chromodynamics lattice",
+                                       FIXTURE_SOURCES)
+        self.assertEqual(answer["verdict"], "NO EVIDENCE")
+        pdf = brief_pdf.render_pdf(answer)
+        self.assertIn(b"NO EVIDENCE", pdf)
+        self.assertIn(b"No claims", pdf)
+
+    def test_long_brief_spans_multiple_pages(self):
+        import re
+        claims = [{"text": "Tavily API fact %d. " % i + "word " * 60,
+                   "source_index": i % 3} for i in range(6)]
+        sources = [{"title": "A fairly long source title number %d "
+                             "about search" % i,
+                    "url": "https://example.test/source-%d" % i,
+                    "provider": "tavily"} for i in range(12)]
+        answer = {"question": "What is the Tavily API used for?",
+                  "verdict": "GROUNDED", "score": 90, "coverage": 1.0,
+                  "sources_used": 3, "claims": claims, "sources": sources}
+        pdf = brief_pdf.render_pdf(answer)
+        count = int(re.search(rb"/Count (\d+)", pdf).group(1))
+        self.assertGreaterEqual(count, 2)
+        self.assertEqual(pdf.count(b"/Subtype /Link"), 12)
+
+
+class TestBriefPdfRoute(unittest.TestCase):
+    def _post(self, payload):
+        body = payload if isinstance(payload, bytes) \
+            else json.dumps(payload).encode()
+        return service.handle("POST", "/api/brief.pdf", {}, body)
+
+    def test_route_returns_a_pdf(self):
+        answer = synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES)
+        status, ctype, payload = self._post(_brief_payload(answer))
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "application/pdf")
+        self.assertTrue(payload.startswith(b"%PDF-1.4"))
+        self.assertEqual(payload.count(b"/Subtype /Link"),
+                         len(FIXTURE_SOURCES))
+
+    def test_route_rejects_invalid_json(self):
+        status, _, payload = self._post(b"{not json")
+        self.assertEqual(status, 400)
+        self.assertIn("invalid_json", payload.decode())
+
+    def test_route_rejects_unknown_verdict(self):
+        answer = synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES)
+        payload = _brief_payload(answer)
+        payload["verdict"] = "TOTALLY TRUE"
+        status, _, body = self._post(payload)
+        self.assertEqual(status, 400)
+        self.assertIn("invalid_verdict", body.decode())
+
+    def test_route_rejects_short_question(self):
+        payload = _brief_payload(synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES))
+        payload["question"] = "hi"
+        status, _, body = self._post(payload)
+        self.assertEqual(status, 400)
+        self.assertIn("invalid_question", body.decode())
+
+    def test_route_rejects_non_http_source_url(self):
+        payload = _brief_payload(synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES))
+        payload["sources"][0]["url"] = "javascript:alert(1)"
+        status, _, body = self._post(payload)
+        self.assertEqual(status, 400)
+        self.assertIn("invalid_sources", body.decode())
+
+    def test_route_rejects_claim_without_source_index(self):
+        payload = _brief_payload(synthesize.synthesize(
+            "What is the Tavily API used for?", FIXTURE_SOURCES))
+        del payload["claims"][0]["source_index"]
+        status, _, body = self._post(payload)
+        self.assertEqual(status, 400)
+        self.assertIn("invalid_claims", body.decode())
+
+    def test_route_rejects_oversized_body(self):
+        status, _, _ = self._post(b"x" * (service.MAX_BRIEF_BODY_BYTES + 1))
+        self.assertEqual(status, 413)
+
+    def test_homepage_offers_the_pdf_download(self):
+        status, _, payload = service.handle("GET", "/", {}, None)
+        self.assertEqual(status, 200)
+        self.assertIn(b"exportPdfBtn", payload)
+        self.assertIn(b"Download brief (.pdf)", payload)
 
 
 class TestVercelAdapter(unittest.TestCase):
