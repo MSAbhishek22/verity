@@ -323,6 +323,105 @@
     .verdict{padding:18px}
     .verdict .score{width:86px; height:86px; font-size:27px}
   }
+
+  /* ---------- landing sections (problem / solution / outcome) ---------- */
+  .block{margin-top:78px}
+  .block-lede{margin:0 0 24px; color:var(--faded); max-width:640px; font-size:16.5px; line-height:1.65}
+  .block-note{margin:22px 0 0; color:var(--faded); font-size:14.5px; line-height:1.65; max-width:680px}
+  section[id]{scroll-margin-top:24px}
+  /* hero hook: uncited answer vs cited claim */
+  .hook{
+    display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:stretch;
+    margin-top:42px;
+  }
+  .hook-card{
+    background:var(--glass); border:1px solid var(--glass-border); border-radius:14px;
+    backdrop-filter:blur(12px) saturate(150%); -webkit-backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:0 10px 26px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+    padding:16px 18px;
+  }
+  .hook-card.bad{border-style:dashed; opacity:.88}
+  .hook-card.good{border-color:rgba(62,207,127,.35)}
+  .hook-label{
+    font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.1em;
+    text-transform:uppercase; margin:0 0 10px; color:var(--faded);
+  }
+  .hook-card.bad .hook-label{color:var(--red)}
+  .hook-card.good .hook-label{color:var(--green)}
+  .hook-text{margin:0 0 10px; font-size:15.5px; line-height:1.6}
+  .hook-card.bad .hook-text{color:#b9bec6}
+  .hook-text s{text-decoration-color:rgba(242,112,92,.75); text-decoration-thickness:2px}
+  .hook-note{margin:0; font-size:13px; color:var(--faded); line-height:1.55}
+  .hook-arrow{align-self:center; font:400 22px/1 Georgia,serif; color:var(--amber)}
+  .cite-static{
+    font:600 12px/1 ui-monospace,Menlo,Consolas,monospace; color:#7fd8f7;
+    background:rgba(69,200,240,.10); border:1px solid rgba(69,200,240,.35); border-radius:6px;
+    padding:3px 6px; margin-left:6px; vertical-align:2px; white-space:nowrap;
+  }
+  /* problem cards */
+  .cards3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .pcard{
+    background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:18px;
+    backdrop-filter:blur(12px) saturate(150%); -webkit-backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    transition:transform .25s cubic-bezier(.22,.8,.3,1), border-color .25s ease;
+  }
+  .pcard:hover{transform:translateY(-3px); border-color:rgba(242,112,92,.35)}
+  .pcard .kicker{
+    display:block; font:11px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--red); margin-bottom:12px;
+  }
+  .pcard h3{margin:0 0 8px; font:700 15.5px/1.4 Georgia,serif}
+  .pcard p{margin:0; font-size:14px; color:var(--faded); line-height:1.6}
+  /* solution steps + gate */
+  .how .step-num{
+    display:block; font:700 26px/1 Georgia,serif; margin-bottom:10px;
+    background:linear-gradient(92deg, var(--amber), var(--blue));
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+  }
+  .gate{
+    margin-top:14px; background:var(--glass); border:1px solid var(--glass-border); border-radius:14px;
+    padding:20px 22px;
+    backdrop-filter:blur(12px) saturate(150%); -webkit-backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .gate p{margin:0; font-size:15px; line-height:1.65; color:#c6cdd4}
+  .gate p strong{color:var(--ink)}
+  .gate .stamps{display:flex; gap:12px; flex-wrap:wrap; margin:16px 0}
+  .gate .stamp{font-size:13px; padding:8px 11px}
+  /* outcome stats */
+  .stats{display:grid; grid-template-columns:repeat(2,1fr); gap:12px}
+  .stat{
+    background:var(--glass); border:1px solid var(--glass-border); border-radius:14px; padding:20px 22px;
+    backdrop-filter:blur(12px) saturate(150%); -webkit-backdrop-filter:blur(12px) saturate(150%);
+    box-shadow:0 10px 26px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .stat-num{display:block; font:700 40px/1.05 Georgia,serif; letter-spacing:-.01em}
+  .stat-num small{font-size:19px; color:var(--faded)}
+  .stat .stamp{font-size:11px; padding:6px 9px; margin-top:12px; display:inline-block}
+  .stat p{margin:12px 0 0; font-size:14.5px; color:var(--faded); line-height:1.6}
+  .stat p strong{color:var(--ink); font-weight:600}
+  /* scroll reveal — the reveal script adds .js to <html>; without JS, or
+     with reduced motion, every section is simply visible. */
+  html.js .reveal{opacity:0; transform:translateY(20px); transition:opacity .7s ease, transform .7s cubic-bezier(.22,.8,.3,1)}
+  html.js .reveal.in{opacity:1; transform:none}
+  body.low-motion .reveal{opacity:1 !important; transform:none !important; transition:none !important}
+  body.low-motion .pcard{transition:none}
+  body.low-motion .pcard:hover{transform:none}
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1 !important; transform:none !important; transition:none !important}
+    .pcard{transition:none}
+    .pcard:hover{transform:none}
+  }
+  @media (max-width:720px){
+    .block{margin-top:56px}
+    .hook{grid-template-columns:1fr}
+    .hook-arrow{transform:rotate(90deg); justify-self:center}
+    .cards3{grid-template-columns:1fr}
+    .stats{grid-template-columns:1fr}
+    .stat-num{font-size:34px}
+  }
 </style>
 </head>
 <body>
@@ -359,6 +458,74 @@
       <button type="button" data-q="Who won the first modern Olympic Games?">Who won the first modern Olympic Games?</button>
     </div>
     <p class="status" id="status" aria-live="polite"></p>
+  
+    <div class="hook">
+      <div class="hook-card bad">
+        <p class="hook-label">A confident answer, no source</p>
+        <p class="hook-text"><s>&ldquo;Plants turn sunlight into energy at about
+          95% efficiency, a process perfected over millions of years.&rdquo;</s></p>
+        <p class="hook-note">Stated flatly, with nothing behind it. The figure is
+          invented — and there is no way to tell.</p>
+      </div>
+      <div class="hook-arrow" aria-hidden="true">&rarr;</div>
+      <div class="hook-card good">
+        <p class="hook-label">A Verity answer</p>
+        <p class="hook-text">&ldquo;Photosynthesis is a process used by plants to
+          convert light energy into chemical energy.&rdquo;<span class="cite-static">[1]</span></p>
+        <p class="hook-note">One claim, one source. Click the citation and the
+          source opens, so you can read it yourself.</p>
+      </div>
+    </div>
+  </section>
+  <section class="block reveal" id="problem">
+    <h2 class="section">The problem — answers you cannot check</h2>
+    <p class="block-lede">Ask a question and you get an answer in seconds.
+      What you do not get is any way to check it.</p>
+    <div class="cards3">
+      <article class="pcard">
+        <span class="kicker">Problem 01</span>
+        <h3>Confidence, with no sources</h3>
+        <p>AI tools answer in a steady, certain voice and give you nothing to
+          check — no link, no page, no way to tell a fact from a guess.</p>
+      </article>
+      <article class="pcard">
+        <span class="kicker">Problem 02</span>
+        <h3>Checking takes longer than asking</h3>
+        <p>To verify one fact you have to redo the whole search yourself. It
+          takes longer than asking did, so most people skip it and move on.</p>
+      </article>
+      <article class="pcard">
+        <span class="kicker">Problem 03</span>
+        <h3>Wrong facts travel</h3>
+        <p>The unchecked answer gets copied into an assignment, a pitch, a
+          report. It reads like truth, so it is treated as truth — errors
+          and all.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="block reveal" id="solution">
+    <h2 class="section">The solution — how Verity answers</h2>
+    <p class="block-lede">Three steps, and a gate at the end of them.
+      No step writes a word of its own.</p>
+    <div class="how">
+      <div><span class="step-num">1</span><h3>Search live</h3><p>Your question goes to live sources — Tavily web search when a key is set, the free Wikipedia API otherwise. Both run at once, and the better result wins.</p></div>
+      <div><span class="step-num">2</span><h3>Quote, don&rsquo;t invent</h3><p>The answer is built only from sentences the sources actually contain. There is no model writing claims: if a sentence is not in a source, it is not in the answer.</p></div>
+      <div><span class="step-num">3</span><h3>Gate the answer</h3><p>Before you read it, the answer is scored and stamped. Every claim keeps its citation, so checking a claim is one click — not a fresh search.</p></div>
+    </div>
+    <div class="gate">
+      <p><strong>The gate.</strong> Each answer scores 0 to 100 — keyword coverage,
+        source diversity and claim count — and carries one of four stamps, in
+        plain sight:</p>
+      <div class="stamps">
+        <span class="stamp grounded">Grounded</span>
+        <span class="stamp partial">Partial</span>
+        <span class="stamp thin">Thin</span>
+        <span class="stamp noevidence">No evidence</span>
+      </div>
+      <p>A weak answer is not dressed up as a strong one. It is labelled,
+        and you decide what to do with it.</p>
+    </div>
   </section>
 
   <section class="results" id="results" aria-live="polite">
@@ -391,13 +558,43 @@
       <button class="secondary" id="againBtn" type="button">Ask another question</button>
     </div>
   </section>
-
-  <h2 class="section">How it works</h2>
-  <div class="how">
-    <div><h3>1 · Search live</h3><p>Tavily web search when a key is set; the free Wikipedia API otherwise. Both run in parallel and the best result wins.</p></div>
-    <div><h3>2 · Quote, don't invent</h3><p>Extractive synthesis: the answer is built only from retrieved sentences. No LLM, no generated claims.</p></div>
-    <div><h3>3 · Gate the answer</h3><p>Every claim keeps its citation. The gate scores keyword coverage, source diversity and claim count — and labels weak answers THIN.</p></div>
-  </div>
+  <section class="block reveal" id="outcome">
+    <h2 class="section">The outcome — measured, not promised</h2>
+    <p class="block-lede">Every number below comes from a real run or from the
+      test suite. The same tool is at the top of this page — run it yourself.</p>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-num">100<small>/100</small></span>
+        <span class="stamp grounded">Grounded</span>
+        <p>&ldquo;How does photosynthesis work?&rdquo; — <strong>6 claims, every one
+          cited, from 5 sources.</strong> A straight question with solid
+          evidence behind it.</p>
+      </div>
+      <div class="stat">
+        <span class="stat-num">80<small>/100</small></span>
+        <span class="stamp grounded">Grounded</span>
+        <p>A harder question — the current state of solid-state battery
+          commercialisation — scored <strong>80/100 on a live run on
+          23 Nov 2026</strong>. Good evidence, not perfect, and the score
+          says so.</p>
+      </div>
+      <div class="stat">
+        <span class="stat-num">0<small>/100</small></span>
+        <span class="stamp noevidence">No evidence</span>
+        <p>Ask a nonsense question and Verity finds nothing — and says
+          nothing. <strong>No invented answer</strong>, just an honest
+          empty result.</p>
+      </div>
+      <div class="stat">
+        <span class="stat-num">49<small>/49</small></span>
+        <p><strong>Automated tests pass</strong> — search, synthesis, the
+          gate, the API routes and the PDF export, including bad inputs:
+          a two-letter question is refused, not answered.</p>
+      </div>
+    </div>
+    <p class="block-note">Every finished brief can be downloaded as a PDF with
+      its sources linked, so the receipts survive outside this page.</p>
+  </section>
 
   <footer>
     <p>Verity 0.2.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
@@ -711,6 +908,32 @@
     input.value = ""; input.focus();
     window.scrollTo({top: 0, behavior: lowMotion ? "auto" : "smooth"});
   });
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  // Scroll reveal for the landing sections. Presentation only — the app
+  // script above is untouched. Without IntersectionObserver, or when the
+  // visitor prefers reduced motion, every section is simply visible.
+  if (!("IntersectionObserver" in window)) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.documentElement.classList.add("js");
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, {threshold: 0.06, rootMargin: "0px 0px -6% 0px"});
+  document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+  // If the visitor switches low motion on, show everything at once.
+  var toggle = document.getElementById("motionToggle");
+  if (toggle){
+    toggle.addEventListener("click", function(){
+      if (document.body.classList.contains("low-motion")){
+        document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
+      }
+    });
+  }
 })();
 </script>
 </body>
