@@ -108,6 +108,18 @@
     transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
   .samples button:hover{border-color:rgba(242,179,61,.45); transform:translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  /* ---------- hero 3D evidence sky ---------- */
+  .hero3d-wrap{margin:26px 0 6px; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#06090d; position:relative}
+  .hero3d-wrap canvas{display:block; width:100%; height:300px; touch-action:none}
+  .hero3d-cap{margin:0; padding:9px 14px; font-size:13px; color:var(--faded); border-top:1px solid var(--line)}
+  .hero3d-cap b{color:var(--ink); font-weight:600}
+  .scroll-cue{display:inline-flex; gap:8px; align-items:center; margin:14px 0 0; font-size:14px; color:var(--blue); text-decoration:none}
+  .scroll-cue:hover{text-decoration:underline}
+  .scroll-cue .arr{animation:bob 1.8s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)}}
+  body.low-motion .scroll-cue .arr{animation:none}
+  @media (prefers-reduced-motion: reduce){ .scroll-cue .arr{animation:none} }
+  @media (max-width:720px){ .hero3d-wrap canvas{height:230px} }
   /* ---------- status / verdict ---------- */
   .status{
     margin:28px 0 0; font:14px/1.5 ui-monospace,Menlo,Consolas,monospace;
@@ -466,6 +478,11 @@
       <button type="button" data-q="How does photosynthesis work?">How does photosynthesis work?</button>
       <button type="button" data-q="Who won the first modern Olympic Games?">Who won the first modern Olympic Games?</button>
     </div>
+    <div class="hero3d-wrap" id="hero3dWrap">
+      <canvas id="hero3d" aria-label="3D evidence sky: your question at the centre, sources orbiting it. Drag to rotate."></canvas>
+      <p class="hero3d-cap"><b>Evidence sky.</b> Your question at the centre, sources orbiting it &mdash; blue Tavily, green Wikipedia. Ask below and the real constellation builds from your answer.</p>
+    </div>
+    <a class="scroll-cue" href="#problem"><span class="arr" aria-hidden="true">&darr;</span> Scroll &mdash; the problem, the fix, the proof</a>
     <p class="status" id="status" aria-live="polite"></p>
   
     <div class="hook">
@@ -943,6 +960,124 @@
       }
     });
   }
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var wrap = document.getElementById("hero3dWrap");
+  var canvas = document.getElementById("hero3d");
+  if (!wrap || !canvas) return;
+  if (typeof THREE === "undefined") { wrap.style.display = "none"; return; }
+  var reducedMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function lowMotion() {
+    return reducedMQ.matches || document.body.classList.contains("low-motion");
+  }
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  } catch (e) { wrap.style.display = "none"; return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
+  camera.position.set(0, 1.2, 10);
+  var sky = new THREE.Group();
+  sky.rotation.x = 0.42;
+  scene.add(sky);
+  // The question at the centre, glowing amber.
+  var core = new THREE.Mesh(
+    new THREE.SphereGeometry(0.62, 32, 32),
+    new THREE.MeshBasicMaterial({ color: 0xf2b33d })
+  );
+  sky.add(core);
+  var shell = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.95, 1),
+    new THREE.MeshBasicMaterial({ color: 0xf2b33d, wireframe: true, transparent: true, opacity: 0.35 })
+  );
+  sky.add(shell);
+  // Eight source nodes on two rings: blue Tavily, green Wikipedia.
+  var linePts = [];
+  for (var i = 0; i < 8; i++) {
+    var ring = i % 2;
+    var r = ring === 0 ? 3.1 : 4.3;
+    var a = (i / 8) * Math.PI * 2 + (ring === 0 ? 0 : Math.PI / 8);
+    var x = Math.cos(a) * r, y = Math.sin(a) * r, z = 0;
+    var node = new THREE.Mesh(
+      new THREE.SphereGeometry(ring === 0 ? 0.3 : 0.24, 20, 20),
+      new THREE.MeshBasicMaterial({ color: ring === 0 ? 0x45c8f0 : 0x3ecf7f })
+    );
+    node.position.set(x, y, z);
+    sky.add(node);
+    linePts.push(0, 0, 0, x, y, z);
+  }
+  var spokes = new THREE.LineSegments(
+    new THREE.BufferGeometry().setAttribute("position",
+      new THREE.Float32BufferAttribute(linePts, 3)),
+    new THREE.LineBasicMaterial({ color: 0x8fa3b8, transparent: true, opacity: 0.45 })
+  );
+  sky.add(spokes);
+  // Deterministic starfield behind the sky.
+  var seed = 42;
+  function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  var starPts = [];
+  for (var s = 0; s < 150; s++) {
+    var th = rnd() * Math.PI * 2, ph = Math.acos(2 * rnd() - 1), rr = 8 + rnd() * 6;
+    starPts.push(
+      rr * Math.sin(ph) * Math.cos(th),
+      rr * Math.sin(ph) * Math.sin(th) * 0.6,
+      rr * Math.cos(ph) - 4
+    );
+  }
+  var stars = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute("position",
+      new THREE.Float32BufferAttribute(starPts, 3)),
+    new THREE.PointsMaterial({ color: 0x9fc8e8, size: 0.07, transparent: true, opacity: 0.8 })
+  );
+  scene.add(stars);
+  function resize() {
+    var w = wrap.clientWidth, h = canvas.clientHeight || 300;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  var rotY = 0, dragging = false, lastX = 0, lastY = 0, lastMove = 0, visible = true, running = false;
+  canvas.addEventListener("pointerdown", function (e) {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    rotY += (e.clientX - lastX) * 0.008;
+    sky.rotation.x = Math.max(-0.2, Math.min(1.1, sky.rotation.x - (e.clientY - lastY) * 0.004));
+    lastX = e.clientX; lastY = e.clientY; lastMove = performance.now();
+  });
+  function endDrag() { dragging = false; lastMove = performance.now(); }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; },
+      { threshold: 0.05 }).observe(wrap);
+  }
+  function draw() { renderer.render(scene, camera); }
+  function tick() {
+    if (!running) return;
+    if (lowMotion()) { draw(); running = false; return; }
+    if (!dragging && performance.now() - lastMove > 3000) rotY += 0.0035;
+    sky.rotation.y = rotY;
+    if (visible && !document.hidden) draw();
+    requestAnimationFrame(tick);
+  }
+  function start() { if (!running) { running = true; lastMove = performance.now(); requestAnimationFrame(tick); } }
+  if (reducedMQ.addEventListener) reducedMQ.addEventListener("change", start);
+  var toggle = document.getElementById("motionToggle");
+  if (toggle) toggle.addEventListener("click", function () {
+    if (!document.body.classList.contains("low-motion")) start();
+  });
+  start();
 })();
 </script>
 </body>
