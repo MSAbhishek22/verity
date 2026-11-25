@@ -1,5 +1,14 @@
 # Verity — Status
 
+**Update (25 Nov 2026) — v0.3.0 StaleCheck.** The headline is now the
+stale-answer check (app/stale.py + POST /api/stale-check + landing panel);
+the research mode below is unchanged and demoted to a secondary section.
+Unit tests: **76/76 PASS** (49 previous + 27 new). StaleBench-20 offline
+run: **detection 20/20, exact verdicts 20/20** (benchmark/RESULTS.md).
+Live smoke (local server, real Wikipedia fetches): a 3-claim 2023 answer
+scored 67/100 stale — 1 STALE, 1 CHANGED, 1 FRESH. Still pending, as
+separate steps: the Vercel deploy of v0.3.0 and any submission updates.
+
 **Version:** 0.1.0 · **Built:** 12 Nov 2026 · **Event:** Geek Room Global AI
 Hackathon 2026 (Tavily track) · **Builder:** M S Abhishek (solo, team ms2539)
 · **Prototype due:** Sat 15 Nov 2026, 23:59 IST

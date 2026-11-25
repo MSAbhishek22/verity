@@ -6,6 +6,9 @@ Routes:
   GET  /api/health -> {"ok": true, ...} (no network use)
   GET  /api/status -> provider configuration (no secrets in the response)
   POST /api/ask    -> {"question": "..."} -> cited answer + gate verdict
+  POST /api/stale-check -> {"answer": "...", "generated_on": "YYYY-MM-DD"}
+                       -> per-claim FRESH / STALE / CHANGED / UNVERIFIED
+                          verdicts + one Stale Score (StaleCheck)
   POST /api/brief.pdf -> a finished answer -> the brief as a PDF download
   anything else    -> 404 JSON
 
@@ -18,19 +21,24 @@ Search failures from every provider return 502 with an honest message —
 never a fabricated answer.
 """
 
+import datetime
 import json
 import os
 import time
 
 import brief_pdf
 import search
+import stale
 import synthesize
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 MAX_BODY_BYTES = 8 * 1024
 MAX_BRIEF_BODY_BYTES = 64 * 1024
+MAX_STALE_BODY_BYTES = 16 * 1024
 MAX_QUESTION_CHARS = 500
 MIN_QUESTION_CHARS = 3
+MIN_ANSWER_CHARS = 10
+MAX_ANSWER_CHARS = 4000
 VERDICTS = ("GROUNDED", "PARTIAL", "THIN", "NO EVIDENCE")
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -92,6 +100,62 @@ def _handle_ask(body):
         "keywords": answer["keywords"],
         "claims": answer["claims"],
         "sources": answer["sources"],
+        "took_ms": took_ms,
+    })
+
+
+def _handle_stale_check(body):
+    """StaleCheck: re-check an old answer's dated/numeric/versioned claims.
+
+    Body: {"answer": "...", "generated_on": "YYYY-MM-DD"}. The answer is
+    checked live, claim by claim; a claim whose live check fails comes
+    back UNVERIFIED, never FRESH (see app/stale.py).
+    """
+    try:
+        data = json.loads(body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        return _json(400, {"error": "invalid_json",
+                           "message": "Request body must be valid JSON."})
+    if not isinstance(data, dict):
+        return _json(400, {"error": "invalid_json",
+                           "message": "Request body must be a JSON object."})
+    answer = data.get("answer", "")
+    if not isinstance(answer, str):
+        return _json(400, {"error": "invalid_answer",
+                           "message": "Answer must be text."})
+    answer = answer.strip()
+    if len(answer) < MIN_ANSWER_CHARS:
+        return _json(400, {"error": "answer_too_short",
+                           "message": "Paste an answer of at least 10 characters."})
+    if len(answer) > MAX_ANSWER_CHARS:
+        return _json(400, {"error": "answer_too_long",
+                           "message": "Please keep the answer under 4000 characters."})
+    generated_raw = data.get("generated_on", "")
+    if not isinstance(generated_raw, str):
+        return _json(400, {"error": "invalid_generated_on",
+                           "message": "generated_on must be a date, YYYY-MM-DD."})
+    try:
+        generated_on = datetime.date.fromisoformat(generated_raw.strip())
+    except ValueError:
+        return _json(400, {"error": "invalid_generated_on",
+                           "message": "generated_on must be a date, YYYY-MM-DD."})
+    if generated_on > datetime.date.today():
+        return _json(400, {"error": "generated_on_in_future",
+                           "message": "The answer cannot have been written "
+                                      "in the future."})
+
+    started = time.monotonic()
+    result = stale.check_answer(answer, generated_on)
+    took_ms = round((time.monotonic() - started) * 1000)
+    return _json(200, {
+        "generated_on": result["generated_on"],
+        "checked_on": result["checked_on"],
+        "provider": search.default_provider(),
+        "tavily_configured": search.tavily_configured(),
+        "stale_score": result["stale_score"],
+        "counts": result["counts"],
+        "claims_found": result["claims_found"],
+        "claims": result["claims"],
         "took_ms": took_ms,
     })
 
@@ -218,6 +282,11 @@ def handle(method, path, query, body):
             return _json(413, {"error": "body_too_large",
                                "message": "Request body too large."})
         return _handle_ask(body or b"")
+    if method == "POST" and path == "/api/stale-check":
+        if body is not None and len(body) > MAX_STALE_BODY_BYTES:
+            return _json(413, {"error": "body_too_large",
+                               "message": "Request body too large."})
+        return _handle_stale_check(body or b"")
     if method == "POST" and path == "/api/brief.pdf":
         if body is not None and len(body) > MAX_BRIEF_BODY_BYTES:
             return _json(413, {"error": "body_too_large",

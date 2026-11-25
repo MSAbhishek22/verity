@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verity — the research agent that shows its receipts</title>
+<title>Verity StaleCheck — your AI's answers went stale. Find out which ones.</title>
 <meta name="description" content="Ask a question. Verity searches live sources, answers only with sentences it can cite, and scores how grounded the answer is. Built for the Geek Room Global AI Hackathon 2026 (Tavily track).">
 <style>
   :root{
@@ -97,6 +97,32 @@
   }
   form.ask button:hover{transform:translateY(-1px); box-shadow:0 10px 26px rgba(242,179,61,.32)}
   form.ask button:disabled{opacity:.55; cursor:wait; transform:none; box-shadow:none}
+  /* ---------- stalecheck ---------- */
+  form.stale{display:flex; flex-direction:column; gap:10px; margin:0 0 6px}
+  form.stale textarea{
+    font:16px/1.5 Georgia,"Times New Roman",serif; resize:vertical;
+    padding:14px 16px; border:1px solid rgba(255,255,255,.15); border-radius:8px;
+    background:rgba(255,255,255,.04); color:var(--ink); caret-color:var(--amber);
+  }
+  form.stale textarea:focus{border-color:rgba(242,179,61,.55); box-shadow:0 0 0 4px rgba(242,179,61,.12); outline:none}
+  form.stale .stale-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  form.stale input[type="date"]{
+    font:15px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:12px 14px; border:1px solid rgba(255,255,255,.15); border-radius:8px;
+    background:rgba(255,255,255,.04); color:var(--ink);
+  }
+  form.stale button{
+    font:700 14px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(180deg, #ffc95e, #eda92c); color:#1a1405;
+    border:1px solid rgba(255,201,94,.55); border-radius:8px;
+    padding:14px 24px; cursor:pointer; white-space:nowrap;
+  }
+  form.stale button:disabled{opacity:.55; cursor:wait}
+  .stale-results{margin:18px 0 0}
+  .stale-claim{border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin:0 0 10px}
+  .stale-claim p{margin:6px 0 0; font-size:14px; line-height:1.55}
+  .stale-claim .meta{color:var(--faded); font-size:13px}
+  .research-mode{margin:34px 0 0; padding:22px 0 0; border-top:1px solid var(--line)}
   .fielderror{color:var(--red); font-size:14px; margin:8px 0 0; display:none}
   .fielderror.show{display:block}
   .samples{margin:18px 0 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
@@ -461,10 +487,32 @@
   </header>
 
   <section class="hero">
-    <h1>Ask anything. <em>Every claim shows its receipt.</em></h1>
-    <p class="lede">Verity searches live sources, answers only with sentences it can cite,
-      and scores how grounded the answer is. If the evidence is thin, it says so —
-      it never bluffs.</p>
+    <h1>Your AI&rsquo;s answers went stale. <em>Find out which ones.</em></h1>
+    <p class="lede">Paste an old AI answer and the date it was written. StaleCheck
+      pulls out every claim that carries a date, a number or a version, checks
+      each one against live sources today, and stamps it Fresh, Stale, Changed
+      or Unverified — with the old value and the new value side by side.</p>
+    <form class="stale" id="staleForm" novalidate>
+      <label for="staleAnswer" class="sr-only" style="position:absolute;left:-9999px">An old AI answer</label>
+      <textarea id="staleAnswer" rows="4" maxlength="4000"
+        placeholder="Paste an old AI answer here — for example, one your chatbot gave last month."></textarea>
+      <div class="stale-row">
+        <label for="staleDate">Written on</label>
+        <input id="staleDate" type="date">
+        <button id="staleBtn" type="submit">Check for stale claims</button>
+      </div>
+    </form>
+    <p class="fielderror" id="staleError" role="alert"></p>
+    <div class="samples">
+      <span>Try:</span>
+      <button type="button" id="staleSampleBtn">A 2023 answer about a deadline and a population figure</button>
+    </div>
+    <div class="stale-results" id="staleResults" aria-live="polite"></div>
+    <div class="research-mode">
+    <h2 class="section">Research mode — ask a fresh question</h2>
+    <p class="block-lede">The first Verity tool, kept as it was: it searches live
+      sources, answers only with sentences it can cite, and scores how grounded
+      the answer is. If the evidence is thin, it says so.</p>
     <form class="ask" id="askForm" novalidate>
       <label for="q" class="sr-only" style="position:absolute;left:-9999px">Your question</label>
       <input id="q" name="q" type="text" autocomplete="off" maxlength="500"
@@ -477,6 +525,7 @@
       <button type="button" data-q="How do vaccines work?">How do vaccines work?</button>
       <button type="button" data-q="How does photosynthesis work?">How does photosynthesis work?</button>
       <button type="button" data-q="Who won the first modern Olympic Games?">Who won the first modern Olympic Games?</button>
+    </div>
     </div>
     <div class="hero3d-wrap" id="hero3dWrap">
       <canvas id="hero3d" aria-label="3D evidence sky: your question at the centre, sources orbiting it. Drag to rotate."></canvas>
@@ -504,9 +553,10 @@
     </div>
   </section>
   <section class="block reveal" id="problem">
-    <h2 class="section">The problem — answers you cannot check</h2>
-    <p class="block-lede">Ask a question and you get an answer in seconds.
-      What you do not get is any way to check it.</p>
+    <h2 class="section">The problem — answers age, and nobody tells you</h2>
+    <p class="block-lede">An AI answer can be right on the day it is written
+      and wrong a month later. The deadline moved, the price changed, the
+      version shipped — and the answer still speaks with the same confidence.</p>
     <div class="cards3">
       <article class="pcard">
         <span class="kicker">Problem 01</span>
@@ -531,26 +581,26 @@
   </section>
 
   <section class="block reveal" id="solution">
-    <h2 class="section">The solution — how Verity answers</h2>
-    <p class="block-lede">Three steps, and a gate at the end of them.
-      No step writes a word of its own.</p>
+    <h2 class="section">The solution — how StaleCheck works</h2>
+    <p class="block-lede">Three steps. No step writes a word of its own.</p>
     <div class="how">
-      <div><span class="step-num">1</span><h3>Search live</h3><p>Your question goes to live sources — Tavily web search when a key is set, the free Wikipedia API otherwise. Both run at once, and the better result wins.</p></div>
-      <div><span class="step-num">2</span><h3>Quote, don&rsquo;t invent</h3><p>The answer is built only from sentences the sources actually contain. There is no model writing claims: if a sentence is not in a source, it is not in the answer.</p></div>
-      <div><span class="step-num">3</span><h3>Gate the answer</h3><p>Before you read it, the answer is scored and stamped. Every claim keeps its citation, so checking a claim is one click — not a fresh search.</p></div>
+      <div><span class="step-num">1</span><h3>Pull out the claims</h3><p>StaleCheck reads the pasted answer and picks every sentence that carries a date, a number or a version — the claims that can quietly go out of date.</p></div>
+      <div><span class="step-num">2</span><h3>Check each one live</h3><p>Every claim is checked against sources fetched today — Tavily web search when a key is set, the free Wikipedia API otherwise. The source name and the fetch date sit on every verdict.</p></div>
+      <div><span class="step-num">3</span><h3>Stamp old against new</h3><p>Each claim is stamped, with the old value and the new value side by side, and the whole answer gets one Stale Score: the share of its claims that went stale or changed.</p></div>
     </div>
     <div class="gate">
-      <p><strong>The gate.</strong> Each answer scores 0 to 100 — keyword coverage,
-        source diversity and claim count — and carries one of four stamps, in
-        plain sight:</p>
+      <p><strong>The four stamps.</strong> A claim is never dressed up as
+        checked when it was not:</p>
       <div class="stamps">
-        <span class="stamp grounded">Grounded</span>
-        <span class="stamp partial">Partial</span>
-        <span class="stamp thin">Thin</span>
-        <span class="stamp noevidence">No evidence</span>
+        <span class="stamp grounded">Fresh</span>
+        <span class="stamp thin">Stale</span>
+        <span class="stamp partial">Changed</span>
+        <span class="stamp noevidence">Unverified</span>
       </div>
-      <p>A weak answer is not dressed up as a strong one. It is labelled,
-        and you decide what to do with it.</p>
+      <p>Unverified means the live check could not be done, or no source
+        matched the claim. It never means &ldquo;probably true&rdquo;.
+        The research mode below keeps its own gate: Grounded, Partial,
+        Thin and No evidence.</p>
     </div>
   </section>
 
@@ -590,6 +640,16 @@
       test suite. The same tool is at the top of this page — run it yourself.</p>
     <div class="stats">
       <div class="stat">
+        <span class="stat-num">20<small>/20</small></span>
+        <span class="stamp grounded">StaleBench-20</span>
+        <p><strong>StaleCheck was run against a fixed public bench</strong> —
+          20 old claims, 10 known to have changed and 10 known to be
+          unchanged. It caught <strong>20 of 20</strong> on the offline run
+          of 25 Nov 2026, with the stored evidence from the named sources.
+          The bench and the runner ship in the repo
+          (<code>benchmark/</code>), so anyone can re-run it.</p>
+      </div>
+      <div class="stat">
         <span class="stat-num">100<small>/100</small></span>
         <span class="stamp grounded">Grounded</span>
         <p>&ldquo;How does photosynthesis work?&rdquo; — <strong>6 claims, every one
@@ -612,10 +672,11 @@
           empty result.</p>
       </div>
       <div class="stat">
-        <span class="stat-num">49<small>/49</small></span>
+        <span class="stat-num">76<small>/76</small></span>
         <p><strong>Automated tests pass</strong> — search, synthesis, the
-          gate, the API routes and the PDF export, including bad inputs:
-          a two-letter question is refused, not answered.</p>
+          gate, the StaleCheck module and benchmark runner, the API routes
+          and the PDF export, including bad inputs: a two-letter question
+          is refused, not answered.</p>
       </div>
     </div>
     <p class="block-note">Every finished brief can be downloaded as a PDF with
@@ -623,13 +684,18 @@
   </section>
 
   <footer>
-    <p>Verity 0.2.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
+    <p>Verity 0.3.0 — built 12 Nov 2026 for the <strong>Geek Room Global AI Hackathon 2026</strong> (Tavily track).
       PDF brief export added 21 Nov 2026 for the Global AI Builder's Challenge.
+      StaleCheck added 25 Nov 2026: the stale-answer check the Geek Room problem
+      statement asked for, measured on StaleBench-20.
       Extractive synthesis: every claim is a sentence from a retrieved source; nothing is generated.
       Provider: <code id="footerProvider">…</code>. No account, no tracking, no data stored.</p>
     <p>Honest limits: answers are only as good as the retrieved sources; Wikipedia is an
       encyclopaedia, not a primary source; a GROUNDED verdict means the claims are cited,
-      not that they are true. Always open the source before you quote it.</p>
+      not that they are true. Always open the source before you quote it.
+      StaleCheck limits: it checks claims that carry a date, a number or a version;
+      a claim with none of those is not checked, and an UNVERIFIED stamp means the
+      check could not be done — not that the claim is true.</p>
   </footer>
 
 </div>
@@ -860,10 +926,89 @@
   });
 
   document.querySelectorAll(".samples button").forEach(function(b){
+    if (!b.getAttribute("data-q")) return;
     b.addEventListener("click", function(){
       input.value = b.getAttribute("data-q");
       ask(b.getAttribute("data-q"));
     });
+  });
+
+  // ---------- StaleCheck ----------
+  var staleForm = document.getElementById("staleForm");
+  var staleAnswer = document.getElementById("staleAnswer");
+  var staleDate = document.getElementById("staleDate");
+  var staleBtn = document.getElementById("staleBtn");
+  var staleErr = document.getElementById("staleError");
+  var staleResults = document.getElementById("staleResults");
+  var STALE_STAMP = {FRESH: "grounded", STALE: "thin", CHANGED: "partial", UNVERIFIED: "noevidence"};
+
+  function staleError(msg){
+    staleErr.textContent = msg; staleErr.classList.add("show");
+  }
+  function staleClearError(){ staleErr.textContent = ""; staleErr.classList.remove("show"); }
+
+  function renderStale(data){
+    var counts = data.counts || {};
+    var html = "<div class=\"verdict\"><div class=\"row\">" +
+      "<span class=\"score\"><span>" + data.stale_score + "</span><small>/100 stale</small></span>" +
+      "<span class=\"meta\">" + data.claims_found + " claim(s) checked · " +
+      (counts.FRESH || 0) + " fresh · " + (counts.CHANGED || 0) + " changed · " +
+      (counts.STALE || 0) + " stale · " + (counts.UNVERIFIED || 0) + " unverified · " +
+      "checked on " + esc(data.checked_on) + "</span></div></div>";
+    if (!data.claims_found){
+      html += "<p>No claim with a date, a number or a version was found in " +
+        "that answer, so there is nothing StaleCheck can check.</p>";
+    }
+    data.claims.forEach(function(c){
+      html += "<div class=\"stale-claim\">" +
+        "<span class=\"stamp " + (STALE_STAMP[c.verdict] || "noevidence") + "\">" + esc(c.verdict) + "</span>" +
+        "<p>" + esc(c.text) + "</p>" +
+        "<p class=\"meta\">Old: <b>" + esc(c.old_value || "—") + "</b>" +
+        (c.new_value ? " · New: <b>" + esc(c.new_value) + "</b>" : "") + "</p>" +
+        (c.source_url
+          ? "<p class=\"meta\">Source: <a href=\"" + esc(c.source_url) + "\" target=\"_blank\" rel=\"noopener\">" +
+            esc(c.source_title || c.source_url) + "</a> (" + esc(c.provider) + ", fetched " + esc(c.fetched_on) + ")</p>"
+          : "<p class=\"meta\">" + esc(c.reason || "") + "</p>") +
+        "</div>";
+    });
+    staleResults.innerHTML = html;
+  }
+
+  function runStale(){
+    var answer = staleAnswer.value.trim();
+    var when = staleDate.value;
+    staleClearError();
+    if (answer.length < 10){ staleError("Paste an answer of at least 10 characters."); staleAnswer.focus(); return; }
+    if (!when){ staleError("Pick the date the answer was written."); staleDate.focus(); return; }
+    staleBtn.disabled = true;
+    staleResults.innerHTML = "<p>Checking each claim against live sources…</p>";
+    fetch("/api/stale-check", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({answer: answer, generated_on: when})
+    }).then(function(r){
+      return r.json().then(function(data){ return {ok: r.ok, data: data}; });
+    }).then(function(res){
+      staleBtn.disabled = false;
+      if (!res.ok){ staleResults.innerHTML = ""; staleError(res.data.message || "The check failed."); return; }
+      renderStale(res.data);
+    }).catch(function(){
+      staleBtn.disabled = false;
+      staleResults.innerHTML = "";
+      staleError("The check could not reach the server. Try again.");
+    });
+  }
+
+  staleForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    runStale();
+  });
+
+  document.getElementById("staleSampleBtn").addEventListener("click", function(){
+    staleAnswer.value = "The deadline for linking PAN with Aadhaar is 31 March 2023. " +
+      "India's population is 1.38 billion. The Burj Khalifa in Dubai is 828 metres tall.";
+    staleDate.value = "2023-02-01";
+    runStale();
   });
 
   document.getElementById("exportPdfBtn").addEventListener("click", function(){

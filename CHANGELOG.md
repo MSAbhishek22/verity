@@ -1,5 +1,28 @@
 # Changelog
 
+## 25 Nov 2026 — StaleCheck (v0.3.0)
+
+Verity's headline is now the stale-answer check. The research mode is
+still there, one section down.
+
+- New module app/stale.py: paste an old AI answer and the date it was
+  written; every claim carrying a date, a number or a version is
+  extracted and re-checked against live sources. Verdicts: FRESH /
+  STALE / CHANGED / UNVERIFIED, with old and new values, the source
+  name and the fetch date on each verdict. A failed check is
+  UNVERIFIED, never FRESH.
+- New endpoint: POST /api/stale-check, and a StaleCheck panel at the
+  top of the landing page.
+- New benchmark: benchmark/stalebench20.json + run_bench.py +
+  RESULTS.md. Offline run, stored evidence: detection 20/20,
+  exact verdicts 20/20. The live path was also smoked end to end
+  (a 2023 answer about India's population came back CHANGED from a
+  live Wikipedia fetch; a passed deadline came back STALE).
+- One checker fix from that live smoke: a CHANGED verdict must now
+  beat the best confirming source on relevance, so a loosely related
+  sentence carrying a different quantity cannot overturn a claim.
+- 27 new tests (76 in total, all passing).
+
 ## 21 Nov 2026 — PDF brief export (v0.2.0)
 
 Built during the Global AI Builder's Challenge window (21–28 Nov 2026).

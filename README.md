@@ -14,7 +14,7 @@
 
 ---
 
-# Verity — the research agent that shows its receipts
+# Verity StaleCheck — your AI's answers went stale. Find out which ones.
 
 **Geek Room Global AI Hackathon 2026 · Tavily track · solo entry**
 **Builder:** M S Abhishek (Registration ID `6af4b68f15c2d1d5831aff1d`, team `ms2539`)
@@ -23,6 +23,38 @@
 Ask a question. Verity searches live sources, answers **only with sentences it
 can cite**, and scores how grounded the answer is. If the evidence is thin, it
 says so — it never bluffs.
+
+## StaleCheck (new, 25 Nov 2026 — the headline now)
+
+The research mode above answers new questions. StaleCheck checks old ones.
+
+Paste an old AI answer and the date it was written. StaleCheck pulls out
+every claim that carries a **date, a number or a version**, re-checks each
+one against live sources fetched today, and stamps it:
+
+- **FRESH** — a live source confirms the same value.
+- **CHANGED** — a live source gives a different value (old and new shown).
+- **STALE** — the claim speaks of a date as still to come, and it has passed.
+- **UNVERIFIED** — the check could not be done, or no source matched.
+  A failed check is UNVERIFIED, never FRESH.
+
+The whole answer gets one **Stale Score**: the share of its claims that
+went stale or changed. Every verdict carries the source name and the
+fetch date. Built for people who run AI chatbots and RAG apps — a bot
+that was right last month can be wrong today, and this is the test that
+catches it. Endpoint: `POST /api/stale-check`. Code: `app/stale.py`,
+reusing the research mode's sentence and keyword code.
+
+**Measured, not claimed — StaleBench-20.** A fixed public bench of 20 old
+claims (10 known changed, 10 known unchanged) ships in `benchmark/` with a
+runner anyone can repeat: `python3 benchmark/run_bench.py`. Offline run,
+25 Nov 2026, stored evidence from the named sources: **detection 20/20,
+exact verdicts 20/20**. The live path was smoked the same day: a 2023
+answer saying India's population is 1.38 billion came back CHANGED from a
+live Wikipedia fetch (1.414 billion), a passed PAN–Aadhaar deadline came
+back STALE, and the Burj Khalifa's height came back FRESH. Full record:
+`benchmark/RESULTS.md`. Twenty hand-picked claims is a small bench — the
+score says the checker passes this fixed test, not that it is always right.
 
 - **Live demo:** **https://verity-m-s-abhisheks-projects.vercel.app** — or run locally with `python3 app/server.py`
 - **Repo:** https://github.com/MSAbhishek22/verity
@@ -86,8 +118,9 @@ Browser ──▶ / (index.html, single-page UI + CSS-3D constellation)
   build step, no paid APIs, no keys stored. The same `service.handle`
   function powers the local dev server and the Vercel WSGI adapter.
 - **Files:** `app/search.py` (providers), `app/synthesize.py` (extract + gate),
-  `app/service.py` (HTTP handler), `app/server.py` (local server),
-  `app/index.html` (UI), `api/index.py` (Vercel adapter).
+  `app/stale.py` (StaleCheck), `app/service.py` (HTTP handler),
+  `app/server.py` (local server), `app/index.html` (UI),
+  `api/index.py` (Vercel adapter), `benchmark/` (StaleBench-20 + runner).
 
 ## Run it locally
 
@@ -115,6 +148,8 @@ everything to the `api/index.py` WSGI adapter. Health: `/api/health`.
 | `/api/health` | GET | `{"ok": true, "service": "verity", ...}` |
 | `/api/status` | GET | Provider config (never exposes a key) |
 | `/api/ask` | POST | `{"question": "..."}` (3–500 chars) → cited answer + verdict |
+| `/api/stale-check` | POST | `{"answer": "...", "generated_on": "YYYY-MM-DD"}` → per-claim FRESH / STALE / CHANGED / UNVERIFIED verdicts + Stale Score |
+| `/api/brief.pdf` | POST | A finished answer → the brief as a PDF download |
 
 `POST /api/ask` returns `question, provider, fell_back, verdict, score,
 coverage, sources_used, claims_found, keywords, claims[], sources[], took_ms`.
@@ -125,7 +160,8 @@ returns `NO EVIDENCE` with 200.
 ## Tests
 
 ```bash
-python3 -m unittest discover -s tests -v   # 33 tests, offline, stdlib only
+python3 -m unittest discover -s tests -v   # 76 tests, offline, stdlib only
+python3 benchmark/run_bench.py             # StaleBench-20, offline, stored evidence
 python3 scripts/smoke_live.py              # live Wikipedia path (needs network)
 python3 scripts/ui_check.py                # headless Chromium: console errors,
                                            # ask flow, constellation, export,
@@ -137,6 +173,12 @@ Wikipedia answers, GROUNDED 100 in 1.6 s; nonsense → NO EVIDENCE) · UI check
 13/13 PASS (0 console errors, 0 failed requests, mobile no overflow).
 Evidence: `qa/SMOKE_LIVE.md`, `qa/INTERACTION_INVENTORY.md`, screenshots in
 `qa/screenshots/`.
+
+**Results (25 Nov 2026, v0.3.0):** unit 76/76 PASS (49 kept from before +
+27 new for StaleCheck and the bench) · StaleBench-20 offline: detection
+20/20, exact verdicts 20/20 (`benchmark/RESULTS.md`) · live StaleCheck
+smoke against the local server: a 3-claim 2023 answer scored 67/100 stale
+(1 STALE, 1 CHANGED from a live fetch, 1 FRESH).
 
 ## Honest limits
 
